@@ -1,0 +1,11 @@
+[
+  { "state": "Maharashtra", "district": "Raigad", "tehsil": "Khalapur", "village": "Kalote Rayati", "census_code": "553733" },
+  { "state": "Maharashtra", "district": "Raigad", "tehsil": "Panvel", "village": "Posari", "census_code": "553486" },
+  { "state": "Maharashtra", "district": "Mumbai Suburban", "tehsil": "Andheri", "village": "Andheri", "census_code": "943421" },
+  { "state": "Maharashtra", "district": "Mumbai Suburban", "tehsil": "Andheri", "village": "Oshivara", "census_code": "943414" },
+  { "state": "Maharashtra", "district": "Mumbai Suburban", "tehsil": "Kurla", "village": "Kurla", "census_code": "943568" },
+  { "state": "Maharashtra", "district": "Mumbai Suburban", "tehsil": "Kurla", "village": "Kirol", "census_code": "943567" },
+  { "state": "Maharashtra", "district": "Raigad", "tehsil": "Panvel", "village": "Kharghar", "census_code": "553490" },
+  { "state": "Maharashtra", "district": "Pune", "tehsil": "Haveli", "village": "Wagholi", "census_code": "270101" },
+  { "state": "Maharashtra", "district": "Thane", "tehsil": "Kalyan", "village": "Ambivli", "census_code": "553102" }
+]

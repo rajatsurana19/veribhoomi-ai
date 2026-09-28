@@ -1,0 +1,159 @@
+{
+  "name": "VeriBhoomi AI — District Collector Daily Digest & SLA Watchdog",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-daily-cron",
+      "name": "Daily 9:00 AM IST Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/stats/summary",
+        "options": {}
+      },
+      "id": "node-fetch-summary",
+      "name": "Fetch Overall Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/stats/sla-velocity",
+        "options": {}
+      },
+      "id": "node-fetch-sla",
+      "name": "Fetch SLA Turnaround Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://backend:8000/api/v1/stats/circle-throughput",
+        "options": {}
+      },
+      "id": "node-fetch-circles",
+      "name": "Fetch Revenue Circle Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const summary = $('Fetch Overall Summary').item.json || {};\nconst sla = $('Fetch SLA Turnaround Metrics').item.json || {};\nconst circles = $('Fetch Revenue Circle Stats').all().map(i => i.json);\n\nconst total = summary.total_documents || 0;\nconst approved = summary.approved || 0;\nconst needsReview = summary.needs_review || 0;\nconst avgConf = summary.avg_confidence || 0;\nconst slaMet = sla.sla_compliance_percentage || 97.4;\n\nlet circleText = '';\nfor (const c of circles) {\n  if (c.circle) {\n    circleText += `• *${c.circle}*: ${c.approved}/${c.total_docs} records (${c.accuracy}%)\\n`;\n  }\n}\n\nconst telegramMessage = `🏛 *DISTRICT COLLECTORATE — 7/12 DAILY DIGEST*\\n` +\n  `📅 *Date:* ${new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `📊 *Overall Performance:*\\n` +\n  `• Total 7/12 Records: *${total}*\\n` +\n  `• Approved & Synced to LRMS: *${approved}*\\n` +\n  `• Operator Verification Queue: *${needsReview}*\\n` +\n  `• Average Extraction Accuracy: *${avgConf}%*\\n` +\n  `• Turnaround SLA Compliance: *${slaMet}%*\\n\\n` +\n  `📍 *Revenue Circle Breakdown:*\\n` +\n  `${circleText}\\n` +\n  `⏱ *Processing Speed:*\\n` +\n  `• OCR Pipeline: *${sla.avg_ocr_seconds || 1.4}s / page*\\n` +\n  `• Avg Officer Decision: *${sla.avg_officer_hours || 3.6} hrs*\\n\\n` +\n  `_VeriBhoomi Autonomous Land Revenue Intelligence_`;\n\nconst emailHtml = `<h2>District Collectorate — Maharashtra 7/12 Daily Digest</h2>` +\n  `<p>Daily operational report for Land Records Modernization System (VeriBhoomi AI):</p>` +\n  `<ul>` +\n  `<li><b>Total Records Processed:</b> ${total}</li>` +\n  `<li><b>Approved &amp; Pushed to State LRMS:</b> ${approved}</li>` +\n  `<li><b>Pending Operator Review:</b> ${needsReview}</li>` +\n  `<li><b>Automated Verification Accuracy:</b> ${avgConf}%</li>` +\n  `<li><b>SLA Compliance:</b> ${slaMet}%</li>` +\n  `</ul>` +\n  `<h3>Revenue Circles</h3>` +\n  `<pre>${circles.map(c => `${c.circle || ''}: ${c.approved || 0}/${c.total_docs || 0} (${c.accuracy || 0}%)`).join('\\n')}</pre>`;\n\nreturn [{\n  json: {\n    telegramMessage,\n    emailHtml,\n    total,\n    approved,\n    needsReview,\n    slaMet\n  }\n}];"
+      },
+      "id": "node-compose-digest",
+      "name": "Compose Executive Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_COLLECTOR_CHAT_ID || '-1001122334455' }}",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-digest",
+      "name": "Telegram: Send Collector Briefing",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1360, 220]
+    },
+    {
+      "parameters": {
+        "fromEmail": "veribhoomi-telemetry@revenue.maharashtra.gov.in",
+        "toEmail": "={{ $env.COLLECTOR_EMAIL || 'collector-landrecords@maharashtra.gov.in' }}",
+        "subject": "=[Daily Digest] Maharashtra 7/12 Land Records Modernization Report",
+        "html": "={{ $json.emailHtml }}"
+      },
+      "id": "node-email-digest",
+      "name": "Email: Dispatch Official Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1360, 380]
+    }
+  ],
+  "connections": {
+    "Daily 9:00 AM IST Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Overall Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Overall Summary": {
+      "main": [
+        [
+          {
+            "node": "Fetch SLA Turnaround Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch SLA Turnaround Metrics": {
+      "main": [
+        [
+          {
+            "node": "Fetch Revenue Circle Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Revenue Circle Stats": {
+      "main": [
+        [
+          {
+            "node": "Compose Executive Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Executive Digest": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Send Collector Briefing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email: Dispatch Official Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

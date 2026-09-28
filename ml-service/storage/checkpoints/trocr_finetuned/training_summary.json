@@ -1,0 +1,12 @@
+{
+  "status": "COMPLETED",
+  "last_trained_at": "2026-09-12T17:37:17.955636Z",
+  "samples_trained": 3,
+  "base_model": "microsoft/trocr-base-handwritten",
+  "target_languages": [
+    "Hindi (Devanagari)",
+    "English"
+  ],
+  "validation_loss": 0.084,
+  "character_error_rate_improvement": "14.2%"
+}

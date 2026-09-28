@@ -1,0 +1,205 @@
+{
+  "type": "FeatureCollection",
+  "name": "VeriBhoomi_Maharashtra_Cadastral_Boundaries",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "village_id": "MH-RAI-001",
+        "village_name": "Kalote Rayati",
+        "village_marathi": "कलोते रयती",
+        "tehsil": "Khalapur",
+        "tehsil_marathi": "खालापूर",
+        "district": "Raigad",
+        "district_marathi": "रायगड",
+        "state": "Maharashtra",
+        "census_code": "553733",
+        "total_plots": 185,
+        "digitized_plots": 142,
+        "avg_confidence": 94.5,
+        "status": "Fully Digitized",
+        "land_category": "Agricultural",
+        "center": [18.8412, 73.2825]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [73.2720, 18.8350],
+            [73.2890, 18.8380],
+            [73.2940, 18.8490],
+            [73.2810, 18.8520],
+            [73.2680, 18.8440],
+            [73.2720, 18.8350]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "village_id": "MH-RAI-002",
+        "village_name": "Posari",
+        "village_marathi": "पोसरी",
+        "tehsil": "Panvel",
+        "tehsil_marathi": "पनवेल",
+        "district": "Raigad",
+        "district_marathi": "रायगड",
+        "state": "Maharashtra",
+        "census_code": "553486",
+        "total_plots": 220,
+        "digitized_plots": 178,
+        "avg_confidence": 92.8,
+        "status": "Partially Digitized",
+        "land_category": "Agricultural",
+        "center": [18.9680, 73.1620]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [73.1510, 18.9610],
+            [73.1680, 18.9640],
+            [73.1760, 18.9750],
+            [73.1620, 18.9810],
+            [73.1480, 18.9720],
+            [73.1510, 18.9610]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "village_id": "MH-MUM-001",
+        "village_name": "Andheri",
+        "village_marathi": "अंधेरी",
+        "tehsil": "Andheri",
+        "tehsil_marathi": "अंधेरी",
+        "district": "Mumbai Suburban",
+        "district_marathi": "मुंबई उपनगर",
+        "state": "Maharashtra",
+        "census_code": "943421",
+        "total_plots": 340,
+        "digitized_plots": 295,
+        "avg_confidence": 96.2,
+        "status": "Fully Digitized",
+        "land_category": "Non-Agricultural",
+        "center": [19.1170, 72.8680]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8550, 19.1100],
+            [72.8750, 19.1120],
+            [72.8820, 19.1240],
+            [72.8680, 19.1290],
+            [72.8510, 19.1210],
+            [72.8550, 19.1100]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "village_id": "MH-MUM-002",
+        "village_name": "Oshivara",
+        "village_marathi": "ओशिवरा",
+        "tehsil": "Andheri",
+        "tehsil_marathi": "अंधेरी",
+        "district": "Mumbai Suburban",
+        "district_marathi": "मुंबई उपनगर",
+        "state": "Maharashtra",
+        "census_code": "943414",
+        "total_plots": 260,
+        "digitized_plots": 210,
+        "avg_confidence": 95.0,
+        "status": "Partially Digitized",
+        "land_category": "Non-Agricultural",
+        "center": [19.1510, 72.8360]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8240, 19.1440],
+            [72.8420, 19.1470],
+            [72.8490, 19.1580],
+            [72.8380, 19.1630],
+            [72.8210, 19.1550],
+            [72.8240, 19.1440]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "village_id": "MH-MUM-003",
+        "village_name": "Kurla",
+        "village_marathi": "कुर्ला",
+        "tehsil": "Kurla",
+        "tehsil_marathi": "कुर्ला",
+        "district": "Mumbai Suburban",
+        "district_marathi": "मुंबई उपनगर",
+        "state": "Maharashtra",
+        "census_code": "943568",
+        "total_plots": 310,
+        "digitized_plots": 195,
+        "avg_confidence": 91.5,
+        "status": "Needs Review",
+        "land_category": "Non-Agricultural",
+        "center": [19.0740, 72.8820]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8710, 19.0680],
+            [72.8920, 19.0710],
+            [72.8980, 19.0830],
+            [72.8850, 19.0880],
+            [72.8670, 19.0790],
+            [72.8710, 19.0680]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "village_id": "MH-MUM-004",
+        "village_name": "Kirol",
+        "village_marathi": "किरोळ",
+        "tehsil": "Kurla",
+        "tehsil_marathi": "कुर्ला",
+        "district": "Mumbai Suburban",
+        "district_marathi": "मुंबई उपनगर",
+        "state": "Maharashtra",
+        "census_code": "943567",
+        "total_plots": 190,
+        "digitized_plots": 85,
+        "avg_confidence": 89.0,
+        "status": "Partially Digitized",
+        "land_category": "Non-Agricultural",
+        "center": [19.0910, 72.9060]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [72.8980, 19.0850],
+            [72.9150, 19.0880],
+            [72.9210, 19.0990],
+            [72.9100, 19.1040],
+            [72.8930, 19.0960],
+            [72.8980, 19.0850]
+          ]
+        ]
+      }
+    }
+  ]
+}

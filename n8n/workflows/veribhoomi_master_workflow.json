@@ -1,0 +1,285 @@
+{
+  "name": "VeriBhoomi AI — Master Land Records Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "veribhoomi-events",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "id": "node-webhook-ingress",
+      "name": "VeriBhoomi Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "webhookId": "veribhoomi-events"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.event }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "DOCUMENT_APPROVED",
+              "outputKey": "Approved"
+            },
+            {
+              "value2": "DOCUMENT_REJECTED",
+              "outputKey": "Rejected"
+            },
+            {
+              "value2": "DOCUMENT_SUBMITTED",
+              "outputKey": "Submitted"
+            },
+            {
+              "value2": "NOTIFICATION_DISPATCHED",
+              "outputKey": "Directive"
+            },
+            {
+              "value2": "OPERATOR_REVERTED",
+              "outputKey": "Reverted"
+            }
+          ]
+        }
+      },
+      "id": "node-switch-event",
+      "name": "Switch by Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Maharashtra 7/12 record payload for Telegram & Sheets\nconst data = $input.first().json.body;\nconst doc = data.data || {};\nconst fields = doc.fields || {};\n\nconst survey = fields.survey_number ? fields.survey_number.value : (doc.survey_number || 'N/A');\nconst village = fields.village ? fields.village.value : (doc.village || 'N/A');\nconst taluka = fields.taluka ? fields.taluka.value : (doc.taluka || 'N/A');\nconst district = fields.district ? fields.district.value : (doc.district || 'Maharashtra');\nconst area = fields.total_area ? `${fields.total_area.value} ${fields.total_area.unit || 'Ha'}` : 'N/A';\nconst khatedar = fields.khatedar_names ? fields.khatedar_names.value : 'N/A';\nconst lrmsId = doc.external_lrms_id || doc.cadastral_code || 'PENDING_REGISTRY';\nconst officer = data.actor ? data.actor.email : 'System Officer';\n\nconst telegramMessage = `✅ *VERIBHOOMI 7/12 APPROVED & SYNCED*\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `🏛 *District:* ${district}\\n` +\n  `📍 *Taluka:* ${taluka} | *Village:* ${village}\\n` +\n  `📜 *Survey / Gat No:* ${survey}\\n` +\n  `👤 *Khatedar:* ${khatedar}\\n` +\n  `📐 *Area:* ${area}\\n` +\n  `🔗 *State LRMS ID:* \`${lrmsId}\`\\n` +\n  `✍️ *Approved by:* ${officer}\\n` +\n  `⏱ *Timestamp:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`;\n\nconst emailSubject = `[VeriBhoomi Approval] 7/12 Record Approved: Gat ${survey} (${village}, ${taluka})`;\nconst emailHtml = `<h2>VeriBhoomi Land Records Modernization</h2>` +\n  `<p>The following Maharashtra 7/12 record has been validated and synced with the State Cadastral Registry:</p>` +\n  `<ul>` +\n  `<li><b>Village / Taluka:</b> ${village}, ${taluka}, ${district}</li>` +\n  `<li><b>Survey / Gat No:</b> ${survey}</li>` +\n  `<li><b>Khatedar:</b> ${khatedar}</li>` +\n  `<li><b>Total Area:</b> ${area}</li>` +\n  `<li><b>LRMS External ID:</b> ${lrmsId}</li>` +\n  `<li><b>Approving Officer:</b> ${officer}</li>` +\n  `</ul>`;\n\nreturn [{\n  json: {\n    timestamp: new Date().toISOString(),\n    document_id: data.document_id,\n    batch_id: data.batch_id,\n    survey,\n    village,\n    taluka,\n    district,\n    area,\n    khatedar,\n    lrmsId,\n    officer,\n    telegramMessage,\n    emailSubject,\n    emailHtml\n  }\n}];"
+      },
+      "id": "node-format-approved",
+      "name": "Format Approved 7/12 Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [780, 160]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_OFFICER_CHAT_ID || '-1002345678901' }}",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-approved",
+      "name": "Telegram: Channel Alert (Approved)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1040, 100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "veribhoomi-system@revenue.maharashtra.gov.in",
+        "toEmail": "={{ $env.COLLECTOR_EMAIL || 'collector-landrecords@maharashtra.gov.in' }}",
+        "subject": "={{ $json.emailSubject }}",
+        "html": "={{ $json.emailHtml }}"
+      },
+      "id": "node-email-approved",
+      "name": "Email: Registry Notice (Approved)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1040, 220]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "={{ $env.GOOGLE_SHEET_AUDIT_ID || '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms' }}",
+        "range": "712_Approved_Ledger!A:H",
+        "options": {}
+      },
+      "id": "node-gsheet-approved",
+      "name": "Google Sheets: Audit Ledger",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [1040, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format rejection alert for operator telegram group\nconst data = $input.first().json.body;\nconst payload = data.data || {};\nconst officer = data.actor ? data.actor.email : 'Approving Officer';\nconst reason = payload.rejection_reason || 'Discrepancy in land area / owner names';\nconst filename = payload.filename || 'Scanned_712.pdf';\n\nconst telegramMessage = `⚠️ *VERIBHOOMI DOCUMENT REJECTED*\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `📄 *File:* ${filename}\\n` +\n  `🛑 *Rejection Reason:* ${reason}\\n` +\n  `👨‍💼 *Officer:* ${officer}\\n` +\n  `🆔 *Doc ID:* \`${data.document_id || 'N/A'}\`\\n` +\n  `⚡ *Action Required:* Please open Operator Queue to re-examine scan & resubmit.`;\n\nreturn [{\n  json: {\n    document_id: data.document_id,\n    filename,\n    reason,\n    officer,\n    telegramMessage\n  }\n}];"
+      },
+      "id": "node-format-rejected",
+      "name": "Format Rejection Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [780, 400]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_OPERATOR_CHAT_ID || '-1009876543210' }}",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-rejected",
+      "name": "Telegram: Operator Alert (Rejection)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1040, 460]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Redo Notice or Administrative Directive\nconst data = $input.first().json.body;\nconst payload = data.data || {};\nconst sender = data.actor ? `${data.actor.role.toUpperCase()} (${data.actor.email})` : 'Administrative Authority';\nconst title = payload.title || 'Administrative Directive';\nconst message = payload.message || 'Please inspect record fields.';\nconst notifType = payload.type || 'redo_request';\n\nconst telegramMessage = `🚨 *URGENT DIRECTIVE / REDO REQUEST*\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `📢 *Subject:* ${title}\\n` +\n  `📝 *Instructions:* ${message}\\n` +\n  `👤 *From:* ${sender}\\n` +\n  `🏷 *Priority:* ${notifType.toUpperCase()}\\n` +\n  `⏱ *Sent:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`;\n\nreturn [{\n  json: {\n    title,\n    message,\n    sender,\n    notifType,\n    telegramMessage\n  }\n}];"
+      },
+      "id": "node-format-directive",
+      "name": "Format Directive Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [780, 580]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_OPERATOR_CHAT_ID || '-1009876543210' }}",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-directive",
+      "name": "Telegram: Broadcast Directive to Staff",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1040, 580]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Operator Revert notification for Officer\nconst data = $input.first().json.body;\nconst payload = data.data || {};\nconst operator = data.actor ? data.actor.email : 'Operator';\nconst title = payload.original_title || 'Redo Directive';\nconst reply = payload.reply_message || 'Correction applied.';\n\nconst telegramMessage = `🔄 *OPERATOR RESOLUTION / REVERT*\\n` +\n  `━━━━━━━━━━━━━━━━━━━━━━\\n` +\n  `📌 *Regarding:* ${title}\\n` +\n  `💬 *Resolution Note:* ${reply}\\n` +\n  `👤 *Resolved by Operator:* ${operator}\\n` +\n  `✅ *Status:* Record is now ready for Tehsildar re-review.`;\n\nreturn [{\n  json: {\n    title,\n    reply,\n    operator,\n    telegramMessage\n  }\n}];"
+      },
+      "id": "node-format-revert",
+      "name": "Format Revert Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [780, 720]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_OFFICER_CHAT_ID || '-1002345678901' }}",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-telegram-revert",
+      "name": "Telegram: Notify Officer of Resolution",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1040, 720]
+    }
+  ],
+  "connections": {
+    "VeriBhoomi Event Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch by Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch by Event Type": {
+      "main": [
+        [
+          {
+            "node": "Format Approved 7/12 Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Rejection Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Format Directive Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Revert Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Approved 7/12 Payload": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Channel Alert (Approved)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email: Registry Notice (Approved)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Sheets: Audit Ledger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Rejection Alert": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Operator Alert (Rejection)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Directive Alert": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Broadcast Directive to Staff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Revert Alert": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Notify Officer of Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

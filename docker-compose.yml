@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: veribhoomi-db
+    environment:
+      POSTGRES_USER: veribhoomi
+      POSTGRES_PASSWORD: veribhoomi_password_2026
+      POSTGRES_DB: veribhoomi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veribhoomi -d veribhoomi_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mock-lrms:
+    build:
+      context: ./mock-lrms
+      dockerfile: Dockerfile
+    container_name: veribhoomi-mock-lrms
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: veribhoomi-ml-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: veribhoomi-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://veribhoomi:veribhoomi_password_2026@postgres:5432/veribhoomi_db
+      - ML_SERVICE_URL=http://ml-service:8001
+      - MOCK_LRMS_URL=http://mock-lrms:8002
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook/veribhoomi-events
+      - ENABLE_N8N_WEBHOOKS=true
+      - JWT_SECRET=veribhoomi-super-secret-jwt-key-2026-sih
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mock-lrms:
+        condition: service_started
+      ml-service:
+        condition: service_started
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: veribhoomi-n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Kolkata
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: veribhoomi-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  n8n_data:

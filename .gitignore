@@ -1,0 +1,51 @@
+# Environment and secrets
+.env
+.env.local
+*.env
+
+# Python virtual environment and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Database & Storage
+*.db
+*.sqlite
+*.sqlite3
+veribhoomi.db
+storage/scans/*
+!storage/scans/.gitkeep
+data/*
+!data/.gitkeep
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Large model caches (if downloaded locally)
+ml-service/models/
+ml-service/.cache/
+*.onnx.download
+
+# Local bundled Tesseract binary distribution
+tesseract/
+*.exe
+*.dll
+

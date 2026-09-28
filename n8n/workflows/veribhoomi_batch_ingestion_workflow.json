@@ -1,0 +1,274 @@
+{
+  "name": "VeriBhoomi AI — Automated Batch Ingestion from Cloud Storage",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "node-schedule-poll",
+      "name": "Poll Incoming Folder (Every 15m)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "list",
+        "folderId": "={{ $env.GDRIVE_INCOMING_FOLDER_ID || 'root' }}",
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size"
+          ]
+        }
+      },
+      "id": "node-gdrive-list",
+      "name": "List Pending 7/12 Scans",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.name }}",
+              "operation": "endsWith",
+              "value2": ".pdf"
+            }
+          ]
+        }
+      },
+      "id": "node-filter-pdf",
+      "name": "Filter Land Record PDFs",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/auth/login",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "username",
+              "value": "operator@veribhoomi.gov"
+            },
+            {
+              "name": "password",
+              "value": "password"
+            }
+          ]
+        }
+      },
+      "id": "node-auth-login",
+      "name": "VeriBhoomi: Operator Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [920, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/v1/batches",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('VeriBhoomi: Operator Auth').item.json.access_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "=Automated Cloud Ingestion — {{ $('List Pending 7/12 Scans').item.json.name }}"
+            },
+            {
+              "name": "state",
+              "value": "Maharashtra"
+            },
+            {
+              "name": "district",
+              "value": "Mumbai Suburban"
+            },
+            {
+              "name": "tehsil",
+              "value": "Andheri"
+            },
+            {
+              "name": "village",
+              "value": "Andheri"
+            }
+          ]
+        }
+      },
+      "id": "node-create-batch",
+      "name": "VeriBhoomi: Create Batch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1140, 220]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{ $('List Pending 7/12 Scans').item.json.id }}",
+        "options": {}
+      },
+      "id": "node-gdrive-download",
+      "name": "Download PDF Stream",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1360, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/v1/batches/{{ $('VeriBhoomi: Create Batch').item.json.id }}/documents",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('VeriBhoomi: Operator Auth').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "data"
+            }
+          ]
+        }
+      },
+      "id": "node-upload-document",
+      "name": "VeriBhoomi: Ingest Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1580, 220]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_OPERATOR_CHAT_ID || '-1009876543210' }}",
+        "text": "=📥 *NEW BATCH AUTO-INGESTED*\\n━━━━━━━━━━━━━━━━━━━━━━\\n📄 *File:* {{ $('List Pending 7/12 Scans').item.json.name }}\\n📦 *Batch ID:* `{{ $('VeriBhoomi: Create Batch').item.json.id }}`\\n⚡ OCR extraction worker has started in background.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-notify-ingestion",
+      "name": "Telegram: Ingestion Success Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1800, 220]
+    }
+  ],
+  "connections": {
+    "Poll Incoming Folder (Every 15m)": {
+      "main": [
+        [
+          {
+            "node": "List Pending 7/12 Scans",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Pending 7/12 Scans": {
+      "main": [
+        [
+          {
+            "node": "Filter Land Record PDFs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Land Record PDFs": {
+      "main": [
+        [
+          {
+            "node": "VeriBhoomi: Operator Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VeriBhoomi: Operator Auth": {
+      "main": [
+        [
+          {
+            "node": "VeriBhoomi: Create Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VeriBhoomi: Create Batch": {
+      "main": [
+        [
+          {
+            "node": "Download PDF Stream",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF Stream": {
+      "main": [
+        [
+          {
+            "node": "VeriBhoomi: Ingest Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VeriBhoomi: Ingest Document": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ingestion Success Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

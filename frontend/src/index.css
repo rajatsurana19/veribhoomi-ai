@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Noto Sans Devanagari", "Noto Sans", Inter, system-ui, -apple-system, sans-serif;
+    color: #0f172a;
+    background-color: #f8fafc;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Government Accessibility Font Sizing */
+  html[data-font-size="sm"] {
+    font-size: 14px;
+  }
+  html[data-font-size="base"] {
+    font-size: 16px;
+  }
+  html[data-font-size="lg"] {
+    font-size: 18.5px;
+  }
+
+  /* High-contrast focus state for accessibility */
+  :focus-visible {
+    outline: 2px solid #1e40af;
+    outline-offset: 2px;
+  }
+}
+
+/* Government standard thin borders & clean scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Clean administrative table styling with spacious padding & clear hierarchy */
+.gov-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.gov-table th {
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #334155;
+  padding: 0.875rem 1rem;
+  background-color: #f8fafc;
+  border-bottom: 2px solid #cbd5e1;
+  white-space: nowrap;
+}
+
+.gov-table td {
+  font-size: 0.8125rem;
+  padding: 0.875rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #e2e8f0;
+  line-height: 1.5;
+}
+
+.gov-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.gov-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.gov-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
