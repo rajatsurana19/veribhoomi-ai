@@ -112,6 +112,11 @@ def seed_database():
         master_json_path = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..", "sample-data", "master_reference.json")
         )
+        if not os.path.exists(master_json_path):
+            alt_master = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sample-data", "master_reference.json"))
+            if os.path.exists(alt_master):
+                master_json_path = alt_master
+
         if os.path.exists(master_json_path):
             with open(master_json_path, "r", encoding="utf-8") as f:
                 ref_list = json.load(f)
@@ -141,6 +146,11 @@ def seed_database():
         if operator_user:
             os.makedirs(settings.ORIGINAL_SCANS_DIR, exist_ok=True)
             data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+            if not os.path.exists(data_dir):
+                alt_data = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+                if os.path.exists(alt_data):
+                    data_dir = alt_data
+
 
             batches_to_create = [
                 {

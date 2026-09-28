@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: veribhoomi-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: sh -c "python scripts/seed_data.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ALLOW_SQLITE_FALLBACK
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENABLE_N8N_WEBHOOKS
+        value: "false"
+      - key: BACKEND_CORS_ORIGINS
+        value: "*"
