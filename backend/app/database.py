@@ -42,12 +42,24 @@ db_url = settings.DATABASE_URL
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
+# Auto-redirect direct IPv6 Supabase host (db.xxx.supabase.co) to IPv4 pooler on IPv4-only platforms (like Render)
+if "@db." in db_url and ".supabase.co" in db_url:
+    import re
+    match = re.search(r"://([^:]+):([^@]+)@db\.([a-z0-9]+)\.supabase\.co:(\d+)/(.+)", db_url)
+    if match:
+        user, password, ref, port, db_name = match.groups()
+        pooler_user = f"{user}.{ref}" if not user.endswith(f".{ref}") else user
+        pooler_host = os.getenv("SUPABASE_POOLER_HOST", "aws-0-ap-south-1.pooler.supabase.com")
+        db_url = f"postgresql://{pooler_user}:{password}@{pooler_host}:{port}/{db_name}"
+        print(f"Notice: Automatically routed IPv6 Supabase direct host to IPv4 pooler: {pooler_host}")
+
 # Ensure explicit driver dialect if generic postgresql:// is provided
 if db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
     try:
         import psycopg
     except ImportError:
         db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 
 engine = create_engine(
     db_url,
