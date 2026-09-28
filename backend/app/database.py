@@ -85,17 +85,24 @@ Base = declarative_base()
 def apply_auto_migrations():
     """Ensure newly added columns exist in tables without breaking existing records"""
     from sqlalchemy import text
+    is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+    bool_false = "0" if is_sqlite else "FALSE"
+    bool_true = "1" if is_sqlite else "TRUE"
+
     with engine.connect() as conn:
         # Check and add columns to documents table
         doc_cols = [
-            ("is_duplicate", "BOOLEAN DEFAULT 0"),
+            ("is_duplicate", f"BOOLEAN DEFAULT {bool_false}"),
             ("duplicate_of_id", "VARCHAR(36)"),
             ("land_type", "VARCHAR(50) DEFAULT 'Agricultural'"),
-            ("is_encrypted", "BOOLEAN DEFAULT 1"),
+            ("is_encrypted", f"BOOLEAN DEFAULT {bool_true}"),
+            ("escalation_notes", "TEXT"),
+            ("rejection_reason", "TEXT"),
         ]
         for col_name, col_def in doc_cols:
             try:
-                conn.execute(text(f"ALTER TABLE documents ADD COLUMN {col_name} {col_def};"))
+                sql = f"ALTER TABLE documents ADD COLUMN IF NOT EXISTS {col_name} {col_def};" if not is_sqlite else f"ALTER TABLE documents ADD COLUMN {col_name} {col_def};"
+                conn.execute(text(sql))
                 conn.commit()
             except Exception:
                 pass
@@ -103,6 +110,7 @@ def apply_auto_migrations():
         # Check and add columns to notifications table
         notif_cols = [
             ("batch_id", "VARCHAR(36)"),
+            ("document_id", "VARCHAR(36)"),
             ("sender_id", "VARCHAR(36)"),
             ("sender_role", "VARCHAR(50)"),
             ("parent_notification_id", "VARCHAR(36)"),
@@ -110,10 +118,12 @@ def apply_auto_migrations():
         ]
         for col_name, col_def in notif_cols:
             try:
-                conn.execute(text(f"ALTER TABLE notifications ADD COLUMN {col_name} {col_def};"))
+                sql = f"ALTER TABLE notifications ADD COLUMN IF NOT EXISTS {col_name} {col_def};" if not is_sqlite else f"ALTER TABLE notifications ADD COLUMN {col_name} {col_def};"
+                conn.execute(text(sql))
                 conn.commit()
             except Exception:
                 pass
+
 
 try:
     apply_auto_migrations()

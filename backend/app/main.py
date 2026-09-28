@@ -4,13 +4,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.database import engine, Base
+from app.database import engine, Base, apply_auto_migrations
 import app.models # Register all models
 
 from app.api.routers import auth, batches, documents, validation, stats, audit_logs, gis, notifications, feedback
 
-# Initialize database schema tables
+# Initialize database schema tables & ensure all columns exist
 Base.metadata.create_all(bind=engine)
+try:
+    apply_auto_migrations()
+except Exception as e:
+    print(f"Notice: Migration runner: {e}")
 
 app = FastAPI(
     title="VeriBhoomi AI — Backend API",
@@ -23,11 +27,13 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=settings.BACKEND_CORS_ORIGINS if isinstance(settings.BACKEND_CORS_ORIGINS, list) else ["*"],
+    allow_origin_regex=r"^https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Ensure storage directories exist (scans are served strictly through authenticated /api/v1/documents/{id}/scan)
 os.makedirs(settings.ORIGINAL_SCANS_DIR, exist_ok=True)
