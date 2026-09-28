@@ -38,11 +38,23 @@ else:
         "pool_recycle": 3600
     })
 
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+# Ensure explicit driver dialect if generic postgresql:// is provided
+if db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
+    try:
+        import psycopg
+    except ImportError:
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 engine = create_engine(
-    settings.DATABASE_URL,
+    db_url,
     connect_args=connect_args,
     **engine_kwargs
 )
+
 
 # If connected to PostgreSQL, ensure PostGIS extension exists
 if not settings.DATABASE_URL.startswith("sqlite"):
