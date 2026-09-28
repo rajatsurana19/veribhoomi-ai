@@ -1,6 +1,7 @@
 import os
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Union, Any
+from pydantic import field_validator
 
 _DEFAULT_DATABASE_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "veribhoomi.db")
@@ -45,8 +46,29 @@ class Settings(BaseSettings):
     # Cryptographic Encryption Key for Storage at Rest (AES-256)
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "sih2026-veribhoomi-aes256-master-key-32b=")
 
-    # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["*"]
+    # CORS: Accepts list, comma-separated string, or wildcard string "*"
+    BACKEND_CORS_ORIGINS: Union[str, List[str]] = ["*"]
+
+    @field_validator("BACKEND_CORS_ORIGINS", mode="after")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return ["*"]
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            if "," in v:
+                return [i.strip() for i in v.split(",") if i.strip()]
+            return [v]
+        elif isinstance(v, (list, tuple)):
+            return list(v)
+        return ["*"]
+
 
     PORT: int = 8000
     JWT_SECRET: str = "veribhoomi-super-secret-jwt-key-2026-sih"
