@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import engine, Base, apply_auto_migrations
 import app.models # Register all models
+from fastapi import FastAPI, Response
 
 from app.api.routers import auth, batches, documents, validation, stats, audit_logs, gis, notifications, feedback
 
@@ -60,6 +61,7 @@ from app.services.supabase_service import supabase_service
 def health_check():
     supa_info = supabase_service.ping()
     db_mode = "Supabase Cloud (Connected)" if supa_info.get("connected") else "Local Engine"
+
     return {
         "status": "healthy",
         "service": "VeriBhoomi AI Backend",
@@ -67,6 +69,13 @@ def health_check():
         "database": db_mode,
         "supabase": supa_info
     }
+
+
+@app.head("/health", tags=["Health"])
+@app.head("/api/v1/health", tags=["Health"])
+def health_check_head():
+    return Response(status_code=200)
+
 
 if __name__ == "__main__":
     import uvicorn
